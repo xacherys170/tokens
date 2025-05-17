@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Generador y Validador de Licencias</title>
+<style>
+  body { background: #111; color: #eee; font-family: sans-serif; padding: 1rem; }
+  input, button, textarea { font-size: 1rem; padding: 0.5rem; margin: 0.5rem 0; border-radius: 6px; border:none; }
+  input, textarea { width: 100%; max-width: 400px; background: #222; color: #eee; }
+  button { background: #4caf50; color: #111; cursor: pointer; }
+  button:hover { background: #45a045; }
+  .output { margin-top: 1rem; max-width: 400px; white-space: pre-wrap; background: #222; padding: 1rem; border-radius: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Generador y Validador de Licencias</h1>
+
+<label>User ID para generar licencia:</label>
+<input id="userId" type="text" placeholder="Ingresa User ID" />
+<button onclick="generateLicense()">Generar Licencia</button>
+
+<label>Token a validar:</label>
+<textarea id="tokenInput" rows="3" placeholder="Pega el token aquí"></textarea>
+<button onclick="validateLicense()">Validar Licencia</button>
+
+<div id="output" class="output"></div>
+
+<script>
+  async function generateLicense() {
+    const userId = document.getElementById('userId').value.trim();
+    if (!userId) return alert('Ingresa User ID');
+
+    const res = await fetch('/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'generate', userId })
+    });
+    const data = await res.json();
+    if (data.token) {
+      document.getElementById('tokenInput').value = data.token;
+      showOutput('Licencia generada:\n' + data.token);
+    } else {
+      showOutput('Error: ' + (data.error || 'Desconocido'));
+    }
+  }
+
+  async function validateLicense() {
+    const token = document.getElementById('tokenInput').value.trim();
+    if (!token) return alert('Pega un token para validar');
+
+    const res = await fetch('/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'validate', token })
+    });
+    const data = await res.json();
+
+    if (data.valid) {
+      showOutput('Token válido\nDatos:\n' + JSON.stringify(data.decoded, null, 2));
+    } else {
+      showOutput('Token inválido\nError: ' + (data.error || 'Desconocido'));
+    }
+  }
+
+  function showOutput(msg) {
+    document.getElementById('output').textContent = msg;
+  }
+</script>
+
+</body>
+</html>
