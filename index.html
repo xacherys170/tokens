@@ -2,69 +2,171 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Generador y Validador de Licencias</title>
 <style>
-  body { background: #111; color: #eee; font-family: sans-serif; padding: 1rem; }
-  input, button, textarea { font-size: 1rem; padding: 0.5rem; margin: 0.5rem 0; border-radius: 6px; border:none; }
-  input, textarea { width: 100%; max-width: 400px; background: #222; color: #eee; }
-  button { background: #4caf50; color: #111; cursor: pointer; }
-  button:hover { background: #45a045; }
-  .output { margin-top: 1rem; max-width: 400px; white-space: pre-wrap; background: #222; padding: 1rem; border-radius: 8px; }
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+  body {
+    background: #121212;
+    color: #eee;
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+  }
+
+  h1 {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #00e676;
+  }
+
+  .container {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 420px;
+    width: 100%;
+    box-shadow: 0 0 20px rgba(0, 230, 118, 0.3);
+  }
+
+  label {
+    display: block;
+    margin-top: 1rem;
+    font-weight: 600;
+    color: #81c784;
+  }
+
+  input[type="text"],
+  textarea {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: none;
+    background: #2c2c2c;
+    color: #c8facc;
+    font-size: 1rem;
+    resize: vertical;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  textarea {
+    min-height: 80px;
+  }
+
+  button {
+    margin-top: 1.25rem;
+    width: 100%;
+    background: #00e676;
+    border: none;
+    color: #121212;
+    font-weight: 700;
+    font-size: 1.1rem;
+    padding: 0.85rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  button:hover {
+    background: #00c853;
+  }
+
+  .output {
+    margin-top: 1.5rem;
+    background: #272727;
+    border-radius: 10px;
+    padding: 1rem;
+    max-height: 150px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #b9f6ca;
+    font-family: monospace;
+  }
+
+  @media (max-width: 480px) {
+    body {
+      padding: 1rem;
+    }
+    .container {
+      padding: 1.5rem;
+    }
+  }
 </style>
 </head>
 <body>
 
-<h1>Generador y Validador de Licencias</h1>
+  <h1>Generador y Validador de Licencias</h1>
+  <div class="container">
+    <label for="userId">User ID para generar licencia:</label>
+    <input id="userId" type="text" placeholder="Ejemplo: usuario123" />
 
-<label>User ID para generar licencia:</label>
-<input id="userId" type="text" placeholder="Ingresa User ID" />
-<button onclick="generateLicense()">Generar Licencia</button>
+    <button onclick="generateLicense()">Generar Licencia</button>
 
-<label>Token a validar:</label>
-<textarea id="tokenInput" rows="3" placeholder="Pega el token aquí"></textarea>
-<button onclick="validateLicense()">Validar Licencia</button>
+    <label for="tokenInput">Token a validar:</label>
+    <textarea id="tokenInput" placeholder="Pega o genera tu token aquí"></textarea>
 
-<div id="output" class="output"></div>
+    <button onclick="validateLicense()">Validar Licencia</button>
+
+    <div id="output" class="output" aria-live="polite"></div>
+  </div>
 
 <script>
   async function generateLicense() {
     const userId = document.getElementById('userId').value.trim();
-    if (!userId) return alert('Ingresa User ID');
+    if (!userId) {
+      alert('Por favor, ingresa un User ID.');
+      return;
+    }
 
     const res = await fetch('/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'generate', userId })
     });
+
     const data = await res.json();
+
     if (data.token) {
       document.getElementById('tokenInput').value = data.token;
-      showOutput('Licencia generada:\n' + data.token);
+      showOutput('✅ Licencia generada:\n' + data.token);
     } else {
-      showOutput('Error: ' + (data.error || 'Desconocido'));
+      showOutput('❌ Error: ' + (data.error || 'Error desconocido'));
     }
   }
 
   async function validateLicense() {
     const token = document.getElementById('tokenInput').value.trim();
-    if (!token) return alert('Pega un token para validar');
+    if (!token) {
+      alert('Por favor, pega un token para validar.');
+      return;
+    }
 
     const res = await fetch('/api/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'validate', token })
     });
+
     const data = await res.json();
 
     if (data.valid) {
-      showOutput('Token válido\nDatos:\n' + JSON.stringify(data.decoded, null, 2));
+      showOutput('✅ Token válido.\nDatos:\n' + JSON.stringify(data.decoded, null, 2));
     } else {
-      showOutput('Token inválido\nError: ' + (data.error || 'Desconocido'));
+      showOutput('❌ Token inválido.\nError: ' + (data.error || 'Desconocido'));
     }
   }
 
-  function showOutput(msg) {
-    document.getElementById('output').textContent = msg;
+  function showOutput(message) {
+    const outputEl = document.getElementById('output');
+    outputEl.textContent = message;
   }
 </script>
 
